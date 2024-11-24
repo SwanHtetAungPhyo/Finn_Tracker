@@ -39,7 +39,8 @@ func StockPriceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer conn.Close()
-
+	
+	
 	currentPrice := initialPrice
 	initialData := map[string]interface{}{
 		"symbol": stockSymbol,
