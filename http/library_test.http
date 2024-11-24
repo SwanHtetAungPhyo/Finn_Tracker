@@ -1,0 +1,9 @@
+POST http://localhost/user/login/
+Content-Type:  application/json
+
+{
+    "name": "SwanHtet"
+}
+
+####
+ws://localhost:7001/ws
