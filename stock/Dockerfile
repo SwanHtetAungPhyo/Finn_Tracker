@@ -1,8 +1,8 @@
 FROM golang:1.23.3-bullseye
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
+WORKDIR  /app 
 COPY . .
-RUN  go mod tidy
-RUN go build -o expense-service main.go
-EXPOSE 5002
-CMD [ "./expense-service" ]
+RUN go mod tidy
+RUN  go build -o stock-service .
+EXPOSE 7001
+ENTRYPOINT [ "./stock-service" ]

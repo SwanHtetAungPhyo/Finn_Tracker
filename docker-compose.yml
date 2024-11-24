@@ -47,6 +47,15 @@ services:
     depends_on:
       - postgres
 
+  stock-service:
+    build: 
+      context: ./stock
+    container_name: stock-service
+    ports:
+      - "7001:7001"
+    networks:
+      - app-network
+      
   postgres:
     image: postgres:latest
     container_name: postgres

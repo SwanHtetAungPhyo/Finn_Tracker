@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Stock Price</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        canvas {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Real-Time Stock Price Chart</h2>
+    <canvas id="myChart"></canvas>
+    <div id="debugInfo"></div>
+
+    <script>
+        // Initialize WebSocket connection to Go server
+        const socket = new WebSocket('ws://localhost:7001/ws');
+
+        // Data containers for chart
+        let chartData = [];
+
+        // Debug info display
+        const debugInfo = document.getElementById('debugInfo');
+
+        // Set up Chart.js
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Stock Price',
+                    data: chartData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second',
+                            displayFormats: {
+                                second: 'HH:mm:ss'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Stock Price'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 0
+                }
+            }
+        });
+
+        // Set up event handlers for WebSocket
+        socket.onopen = function(event) {
+            console.log('Connected to WebSocket server!');
+            debugInfo.innerHTML += '<p>Connected to WebSocket server!</p>';
+        };
+
+        socket.onmessage = function(event) {
+            // Parse incoming message
+            const data = JSON.parse(event.data);
+            console.log('Received data:', data);
+
+            // Use current time as timestamp since it's not provided in the data
+            const timestamp = new Date();
+            const value = parseFloat(data.price);
+
+            // Update the chart with the new data
+            chartData.push({x: timestamp, y: value});
+
+            // Limit the number of data points on the chart (e.g., last 100 points)
+            if (chartData.length > 100) {
+                chartData.shift();
+            }
+
+            // Debug info
+            debugInfo.innerHTML = `<p>Last received: Time: ${timestamp.toISOString()}, Value: ${value}, Symbol: ${data.symbol}</p>`;
+            debugInfo.innerHTML += `<p>Chart data points: ${chartData.length}</p>`;
+
+            // Update the chart to reflect the new data
+            chart.update();
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket Error: ', error);
+            debugInfo.innerHTML += `<p>WebSocket Error: ${error}</p>`;
+        };
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('Closed cleanly, code= ' + event.code);
+                debugInfo.innerHTML += `<p>WebSocket closed cleanly, code= ${event.code}</p>`;
+            } else {
+                console.error('Connection error');
+                debugInfo.innerHTML += '<p>WebSocket connection error</p>';
+            }
+        };
+
+        // Function to check if chart is updating
+        function checkChartUpdate() {
+            const currentDataLength = chartData.length;
+            console.log(`Current chart data length: ${currentDataLength}`);
+            debugInfo.innerHTML += `<p>Chart data length: ${currentDataLength}</p>`;
+
+            if (currentDataLength > 0) {
+                const lastDataPoint = chartData[currentDataLength - 1];
+                console.log(`Last data point: Time: ${lastDataPoint.x.toISOString()}, Value: ${lastDataPoint.y}`);
+                debugInfo.innerHTML += `<p>Last data point: Time: ${lastDataPoint.x.toISOString()}, Value: ${lastDataPoint.y}</p>`;
+            }
+        }
+
+        // Check chart update every 5 seconds
+        setInterval(checkChartUpdate, 5000);
+    </script>
+</body>
+</html>
